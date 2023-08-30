@@ -1,35 +1,19 @@
-﻿; Create GUI for window selection
+﻿; Create GUI for sending keystrokes
 Gui, Add, ListBox, vWinList w400 h200 Multi
 FillList()
 Gui, Add, Text, , Keystroke for Start:
-Gui, Add, Edit, vStartKey w50, 1 ; Default value
+Gui, Add, Edit, vStartKey w50, 1 ; Default value for Start button
 Gui, Add, Button, gToggle, Start
 Gui, Add, Text, , Keystroke for Follow:
-Gui, Add, Edit, vFollowKey w50, 2 ; Default value
+Gui, Add, Edit, vFollowKey w50, 2 ; Default value for Follow button
 Gui, Add, Button, gFollow, Follow
 Gui, Add, Edit, w400 vStat ReadOnly, Status: Inactive
-Gui, Add, Edit, w400 h100 vLog ReadOnly -Wrap
-Gui, Show
-return
+Gui, Add, Edit, w400 h100 vLog ReadOnly -VScroll ; Log box
+Gui, Show, w500 h500, MacroMasher by Billster
 
-FillList()
-{
-    targets := ["is1", "is2", "is3", "is4", "is5", "is6", "is7"]
-    WinGet, wID, list
-    Loop, %wID%
-    {
-        thisID := wID%A_Index%
-        WinGetTitle, t, ahk_id %thisID%
-        for _, n in targets
-        {
-            if (InStr(t, n))
-            {
-                GuiControl,, WinList, %t%
-                break
-            }
-        }
-    }
-}
+
+
+return
 
 Toggle:
     GuiControlGet, bText,, Button1
@@ -48,33 +32,43 @@ Toggle:
 return
 
 Follow:
-    GuiControlGet, win, , WinList
-    GuiControlGet, k, , FollowKey
-    SendToWindows(k, win)
+    GuiControlGet, k,, FollowKey
+    GuiControlGet, win,, WinList
+    SendToSelectedWindows(k, win)
 return
 
 SendStartKey:
-    GuiControlGet, win, , WinList
-    GuiControlGet, k, , StartKey
-    SendToWindows(k, win)
+    GuiControlGet, k,, StartKey
+    GuiControlGet, win,, WinList
+    SendToSelectedWindows(k, win)
 return
 
-SendToWindows(k, win)
+SendToSelectedWindows(k, win)
 {
     Loop, Parse, win, |
     {
-        WinGet, wID, list, %A_LoopField%
-        Loop, %wID%
-        {
-            thisID := wID%A_Index%
-            ControlSend,, %k%, ahk_id %thisID%
-        }
+        ; Send the key to the selected window title
+        ControlSend,, %k%, %A_LoopField%
+    }
+}
+
+FillList()
+{
+    ; Find all windows related to the everquest2.exe process
+    WinGet, wList, List, ahk_exe everquest2.exe
+    Loop, %wList%
+    {
+        thisID := wList%A_Index%
+        WinGetTitle, thisTitle, ahk_id %thisID%
+        GuiControl,, WinList, %thisTitle%
     }
 }
 
 Append(m)
 {
-    GuiControl,, Log, % m . "`r`n"
+    GuiControlGet, currentLog,, Log
+    combinedLog := currentLog . m . "`r`n"
+    GuiControl,, Log, % combinedLog
 }
 
 GuiClose:
